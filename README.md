@@ -1,44 +1,23 @@
 # Prettier plugin sort imports
 
-A prettier plugin to sort import declarations by provided Regular Expression order.  
+A prettier plugin to sort import declarations by provided Regular Expression order.
 
-This was forked from https://github.com/trivago/prettier-plugin-sort-imports.  The main difference is that this project will not change the order of your side-effect imports (see [How it works](#how-does-import-sort-work-)), to avoid breaking your styles or your code.  I will try to keep it up-to-date with the Trivago version, but it may drift apart at some point.
+This was forked from https://github.com/trivago/prettier-plugin-sort-imports. The main difference is that this project will not change the order of your side-effect imports (see [How it works](#how-does-import-sort-work-)), to avoid breaking your styles or your code. I will try to keep it up-to-date with the Trivago version, but it may drift apart at some point.
 
 ### Input
 
 ```javascript
 // prettier-ignore
 import { environment } from "./misguided-module-with-side-effects.js";
+import 'core-js/stable';
+import 'regenerator-runtime/runtime';
 
-import "core-js/stable";
-import "regenerator-runtime/runtime";
-import React, {
-    FC,
-    useEffect,
-    useRef,
-    ChangeEvent,
-    KeyboardEvent,
-} from 'react';
+import { initializeApp } from '@core/app';
 import { logger } from '@core/logger';
-import { reduce, debounce } from 'lodash';
-import { Message } from '../Message';
+import { createConnection } from '@server/database';
 import { createServer } from '@server/node';
 import { Alert } from '@ui/Alert';
-import { repeat, filter, add } from '../utils';
-import { initializeApp } from '@core/app';
 import { Popup } from '@ui/Popup';
-import { createConnection } from '@server/database';
-```
-
-
-### Output
-
-```javascript
-// prettier-ignore
-import { environment } from "./misguided-module-with-side-effects.js";
-
-import "core-js/stable";
-import "regenerator-runtime/runtime";
 import { debounce, reduce } from 'lodash';
 import React, {
     ChangeEvent,
@@ -48,14 +27,32 @@ import React, {
     useRef,
 } from 'react';
 
-import { createConnection } from '@server/database';
-import { createServer } from '@server/node';
+import { Message } from '../Message';
+import { add, filter, repeat } from '../utils';
+```
+
+### Output
+
+```javascript
+// prettier-ignore
+import { environment } from "./misguided-module-with-side-effects.js";
+import 'core-js/stable';
+import 'regenerator-runtime/runtime';
 
 import { initializeApp } from '@core/app';
 import { logger } from '@core/logger';
-
+import { createConnection } from '@server/database';
+import { createServer } from '@server/node';
 import { Alert } from '@ui/Alert';
 import { Popup } from '@ui/Popup';
+import { debounce, reduce } from 'lodash';
+import React, {
+    ChangeEvent,
+    FC,
+    KeyboardEvent,
+    useEffect,
+    useRef,
+} from 'react';
 
 import { Message } from '../Message';
 import { add, filter, repeat } from '../utils';
@@ -105,7 +102,8 @@ prevent an import from getting sorted like this:
 ```javascript
 // prettier-ignore
 import { goods } from "zealand";
-import { cars } from "austria";
+
+import { cars } from 'austria';
 ```
 
 This will keep the `zealand` import at the top instead of moving it below the `austria` import. Note that since only
@@ -122,7 +120,11 @@ A collection of Regular expressions in string format.
 "importOrder": ["^@core/(.*)$", "^@server/(.*)$", "^@ui/(.*)$", "^[./]"],
 ```
 
-_Default behavior:_ The plugin moves the third party imports to the top which are not part of the `importOrder` list.
+_Default:_ `[]`
+
+By default, this plugin will not move any imports. To separate third party from relative imports, use `["^[./]"]`. This will become the default in the next major version.
+
+The plugin moves the third party imports to the top which are not part of the `importOrder` list.
 To move the third party imports at desired place, you can use `<THIRD_PARTY_MODULES>` to assign third party imports to the appropriate position:
 
 ```
@@ -140,6 +142,18 @@ between sorted import declarations group. The separation takes place according t
 
 ```
 "importOrderSeparation": true,
+```
+
+_Note:_ If you want greater control over which groups are separated from others, you can add an empty string to your `importOrder` array to signify newlines. For example:
+
+```js
+"importOrderSeparation": false,
+"importOrder": [
+   "^react", // React will be placed at the top of third-party modules
+    "<THIRD_PARTY_MODULES>",
+    "",  // use empty strings to separate groups with empty lines
+    "^[./]"
+],
 ```
 
 #### `importOrderSortSpecifiers`
@@ -213,7 +227,6 @@ with options as a JSON string of the plugin array:
 importOrderParserPlugins: []
 ```
 
-
 #### `importOrderBuiltinModulesToTop`
 
 **type**: `boolean`
@@ -221,7 +234,6 @@ importOrderParserPlugins: []
 **default value:** `false`
 
 A boolean value to enable sorting of builtins to the top of all import groups.
-
 
 ### How does import sort work ?
 
@@ -236,12 +248,14 @@ classified as unsortable. They also behave as a barrier that other imports may n
 example, let's say you've got these imports:
 
 ```javascript
+import D from 'd';
 import E from 'e';
 import F from 'f';
-import D from 'd';
+
 import 'c';
-import B from 'b';
+
 import A from 'a';
+import B from 'b';
 ```
 
 Then the first three imports are sorted and the last two imports are sorted, but all imports above `c` stay above `c`
@@ -251,7 +265,9 @@ and all imports below `c` stay below `c`, resulting in:
 import D from 'd';
 import E from 'e';
 import F from 'f';
+
 import 'c';
+
 import A from 'a';
 import B from 'b';
 ```
@@ -280,12 +296,10 @@ Having some trouble or an issue ? You can check [FAQ / Troubleshooting section](
 | Vue                    | ⚠️ Soon to be supported. | Any contribution is welcome.                     |
 | Svelte                 | ⚠️ Soon to be supported. | Any contribution is welcome.                     |
 
-
 ### Contribution
 
 For more information regarding contribution, please check the [Contributing Guidelines](./CONTRIBUTING.md). If you are trying to
 debug some code in the plugin, check [Debugging Guidelines](./docs/DEBUG.md)
-
 
 ### Disclaimer
 
